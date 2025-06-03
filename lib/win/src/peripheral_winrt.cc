@@ -1,5 +1,6 @@
 #include "peripheral_winrt.h"
 #include "winrt_cpp.h"
+#include <iostream>
 
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -16,6 +17,23 @@ PeripheralWinrt::PeripheralWinrt(uint64_t bluetoothAddress,
                                  BluetoothLEAdvertisementType advertismentType, const int rssiValue,
                                  const BluetoothLEAdvertisement& advertisment)
 {
+    auto asyncOp = BluetoothLEDevice::FromBluetoothAddressAsync(bluetoothAddress);
+asyncOp.Completed([this](auto op, auto status) {
+    if (status == AsyncStatus::Completed) {
+        try {
+            auto device = op.GetResults();
+            auto devName = ws2s(device.Name().c_str());
+            if (!devName.empty()) {
+                name = devName;
+                std::cout << "Resolved name via FromBluetoothAddressAsync: " << devName << std::endl;
+            }
+        } catch (const std::exception& e) {
+            // silently fail
+            std::cout << "huge l async op failed: " << e.what() << std::endl;
+        }
+    }
+});
+
     this->bluetoothAddress = bluetoothAddress;
     address = formatBluetoothAddress(bluetoothAddress);
     // Random addresses have the two most-significant bits set of the 48-bit address.
@@ -35,6 +53,8 @@ void PeripheralWinrt::Update(const int rssiValue, const BluetoothLEAdvertisement
                              const BluetoothLEAdvertisementType& advertismentType)
 {
     std::string localName = ws2s(advertisment.LocalName().c_str());
+std::cout << "advertisement has " << advertisment.DataSections().Size() << " data sections and is type: " <<  (advertismentType == BluetoothLEAdvertisementType::ScanResponse ? "scanResponse" : "other" ) << " " << static_cast<int32_t>(advertismentType) << " " << name <<  std::endl;
+
     if (!localName.empty())
     {
         name = localName;

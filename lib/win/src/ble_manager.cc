@@ -7,7 +7,7 @@
 
 #include "ble_manager.h"
 #include "winrt_cpp.h"
-
+#include <iostream>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Storage.Streams.h>
 using winrt::Windows::Devices::Bluetooth::BluetoothCacheMode;
@@ -121,6 +121,7 @@ void BLEManager::Scan(const std::vector<winrt::guid>& serviceUUIDs, bool allowDu
     mAllowDuplicates = allowDuplicates;
     BluetoothLEAdvertisementFilter filter = BluetoothLEAdvertisementFilter();
     BluetoothLEAdvertisement advertisment = BluetoothLEAdvertisement();
+    
     auto services = advertisment.ServiceUuids();
     for (auto uuid : serviceUUIDs)
     {
@@ -128,6 +129,7 @@ void BLEManager::Scan(const std::vector<winrt::guid>& serviceUUIDs, bool allowDu
     }
     filter.Advertisement(advertisment);
     mAdvertismentWatcher.AdvertisementFilter(filter);
+ //  mAdvertismentWatcher.ScanningMode(BluetoothLEScanningMode::Active);
     mAdvertismentWatcher.Start();
     mEmit.ScanState(true);
 }
@@ -138,8 +140,16 @@ void BLEManager::OnScanResult(BluetoothLEAdvertisementWatcher watcher,
     uint64_t bluetoothAddress = args.BluetoothAddress();
     std::string uuid = formatBluetoothUuid(bluetoothAddress);
     int16_t rssi = args.RawSignalStrengthInDBm();
+    
     auto advertismentType = args.AdvertisementType();
+    std::cout << "ADVERTISEMENT " << args.Advertisement().DataSections().Size() << " TYPE : " <<  static_cast<int32_t>(advertismentType) << " " <<  ws2s(args.Advertisement().LocalName().c_str()).c_str() <<  std::endl;
+     for (auto ds : args.Advertisement().DataSections()) {
+           if (ds.DataType() == BluetoothLEAdvertisementDataTypes::ShortenedLocalName() ||
+                    ds.DataType() == BluetoothLEAdvertisementDataTypes::CompleteLocalName()) {
+                          std::cout << "got data holy shit " << std::endl;
 
+                    }
+     }
     if (mDeviceMap.find(uuid) == mDeviceMap.end())
     {
         mAdvertismentMap.insert(uuid);
