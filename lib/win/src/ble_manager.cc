@@ -142,14 +142,7 @@ void BLEManager::OnScanResult(BluetoothLEAdvertisementWatcher watcher,
     int16_t rssi = args.RawSignalStrengthInDBm();
     
     auto advertismentType = args.AdvertisementType();
-    std::cout << "ADVERTISEMENT " << args.Advertisement().DataSections().Size() << " TYPE : " <<  static_cast<int32_t>(advertismentType) << " " <<  ws2s(args.Advertisement().LocalName().c_str()).c_str() <<  std::endl;
-     for (auto ds : args.Advertisement().DataSections()) {
-           if (ds.DataType() == BluetoothLEAdvertisementDataTypes::ShortenedLocalName() ||
-                    ds.DataType() == BluetoothLEAdvertisementDataTypes::CompleteLocalName()) {
-                          std::cout << "got data holy shit " << std::endl;
-
-                    }
-     }
+  
     if (mDeviceMap.find(uuid) == mDeviceMap.end())
     {
         mAdvertismentMap.insert(uuid);

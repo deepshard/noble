@@ -18,22 +18,15 @@ PeripheralWinrt::PeripheralWinrt(uint64_t bluetoothAddress,
                                  const BluetoothLEAdvertisement& advertisment)
 {
     auto asyncOp = BluetoothLEDevice::FromBluetoothAddressAsync(bluetoothAddress);
-asyncOp.Completed([this](auto op, auto status) {
-    if (status == AsyncStatus::Completed) {
-        try {
-            auto device = op.GetResults();
-            auto devName = ws2s(device.Name().c_str());
-            if (!devName.empty()) {
-                name = devName;
-                std::cout << "Resolved name via FromBluetoothAddressAsync: " << devName << std::endl;
-            }
-        } catch (const std::exception& e) {
-            // silently fail
-            std::cout << "huge l async op failed: " << e.what() << std::endl;
+    try {
+        auto device = asyncOp.get();
+        auto devName = ws2s(device.Name().c_str());
+        if (!devName.empty()) {
+            this->name = devName;
         }
+    } catch (const std::exception& e) {
+        std::cerr << "Noble: FromBluetoothAddressAsync async op failed: " << e.what() << std::endl;
     }
-});
-
     this->bluetoothAddress = bluetoothAddress;
     address = formatBluetoothAddress(bluetoothAddress);
     // Random addresses have the two most-significant bits set of the 48-bit address.
@@ -53,11 +46,11 @@ void PeripheralWinrt::Update(const int rssiValue, const BluetoothLEAdvertisement
                              const BluetoothLEAdvertisementType& advertismentType)
 {
     std::string localName = ws2s(advertisment.LocalName().c_str());
-std::cout << "advertisement has " << advertisment.DataSections().Size() << " data sections and is type: " <<  (advertismentType == BluetoothLEAdvertisementType::ScanResponse ? "scanResponse" : "other" ) << " " << static_cast<int32_t>(advertismentType) << " " << name <<  std::endl;
+// std::cout << "advertisement has " << advertisment.DataSections().Size() << " data sections and is type: " <<  (advertismentType == BluetoothLEAdvertisementType::ScanResponse ? "scanResponse" : "other" ) << " " << static_cast<int32_t>(advertismentType) << " " << name <<  std::endl;
 
-    if (!localName.empty())
+    if (!localName.empty() && name.empty())
     {
-        name = localName;
+        this->name = localName;
     }
 
     connectable = advertismentType == BluetoothLEAdvertisementType::ConnectableUndirected ||
